@@ -135,6 +135,15 @@ impl App {
         else if self.clicked[self.cursor_x+self.cursor_y*self.map_width]==0
         {
             self.clicked[self.cursor_x+self.cursor_y*self.map_width]=1;
+            //expand if the cell is numberless
+            if self.located[self.cursor_x+self.cursor_y*self.map_width]==0
+            {
+                self.expand(self.cursor_x, self.cursor_y, false);
+            }
+            else
+            {
+                self.ncells-=1;
+            }
         }
         //if already clicked then expand
         else if self.clicked[self.cursor_x+self.cursor_y*self.map_width]==1
@@ -146,15 +155,6 @@ impl App {
             {
                 self.expand(self.cursor_x, self.cursor_y, true);
             }
-        }
-        //expand if the cell is numberless
-        if self.located[self.cursor_x+self.cursor_y*self.map_width]==0
-        {
-            self.expand(self.cursor_x, self.cursor_y, false);
-        }
-        else
-        {
-            self.ncells-=1;
         }
         if self.ncells==0
         {
