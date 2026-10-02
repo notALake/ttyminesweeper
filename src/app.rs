@@ -41,7 +41,7 @@ impl App {
             should_quit: false,
             map_width,
             map_height,
-            bombs: map_width*map_height/4,
+            bombs: map_width*map_height*13/100,
             located: vec![0; map_height*map_width],
             clicked: vec![0; map_height*map_width],
             defeat: false,
