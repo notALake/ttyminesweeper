@@ -76,7 +76,7 @@ fn main() -> Result<()> {
                             KeyCode::Char('q') => app.should_quit = true,
                             KeyCode::Enter => {
                                 //Dynamic bombs number and cursor location, to avoid impossible situation
-                                app.bombs = app.map_width*app.map_height/4;
+                                app.bombs = app.map_width*app.map_height*13/100;
                                 app.cursor_x = app.map_width-app.map_width/2;
                                 app.cursor_y = app.map_height-app.map_height/2;
                                 app.state = GameState::Playing;

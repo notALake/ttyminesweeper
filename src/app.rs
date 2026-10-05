@@ -11,6 +11,13 @@ pub enum Selected
     Profile2,
 }
 
+const NEIGHBORS: [(i32, i32); 8] =
+[
+    (-1, -1), (-1, 0), (-1, 1),
+    ( 0, -1),          ( 0, 1),
+    ( 1, -1), ( 1, 0), ( 1, 1),
+];
+
 pub struct App {
     pub state: GameState,
     pub cursor_x: usize,
@@ -41,7 +48,7 @@ impl App {
             should_quit: false,
             map_width,
             map_height,
-            bombs: map_width*map_height*13/100,
+            bombs: 0,
             located: vec![0; map_height*map_width],
             clicked: vec![0; map_height*map_width],
             defeat: false,
@@ -56,7 +63,6 @@ impl App {
         self.located = vec![0; self.map_height*self.map_width];
         self.clicked = vec![0; self.map_height*self.map_width];
         self.defeat = false;
-        self.bombs = self.map_width*self.map_height/4;
         self.ncells = 0;
     }
 
@@ -182,131 +188,22 @@ impl App {
     //if there's a number it reduce the ncell variable(numbered cells) by 1 
     pub fn expand(&mut self, j: usize, k: usize, click: bool)
     {
-        if j>1 && k>1 && (self.clicked[(j-1)+(k-1)*self.map_width]==0 || (!click && self.clicked[(j-1)+(k-1)*self.map_width]==2))
+        for (dx, dy) in NEIGHBORS
         {
-            self.clicked[(j-1)+(k-1)*self.map_width]=1;
-            if self.located[(j-1)+(k-1)*self.map_width]==0
+            let nj = j as i32 + dx;
+            let nk = k as i32 + dy;
+            if nj < 1 || nj > self.map_width as i32 - 2 {continue;}
+            if nk < 1 || nk > self.map_height as i32 - 2 {continue;}
+            let address = nj as usize + nk as usize * self.map_width;
+            let hidden = self.clicked[address] == 0;
+            let flagged = self.clicked[address] == 2;
+
+            if hidden || (!click && flagged)
             {
-                self.expand(j-1, k-1, false);
-            }
-            else if self.located[(j-1)+(k-1)*self.map_width]==9
-            {
-                self.gameover();
-            }
-            else
-            {
-                self.ncells-=1;
-            }
-        }
-        if j>1 && (self.clicked[(j-1)+k*self.map_width]==0 || (!click && self.clicked[(j-1)+k*self.map_width]==2))
-        {
-            self.clicked[(j-1)+k*self.map_width]=1;
-            if self.located[(j-1)+k*self.map_width]==0
-            {
-                self.expand(j-1, k, false);
-            }
-            else if self.located[(j-1)+(k)*self.map_width]==9
-            {
-                self.gameover();
-            }
-            else
-            {
-                self.ncells-=1;
-            }
-        }
-        if j>1 && k<self.map_height-2 && (self.clicked[(j-1)+(k+1)*self.map_width]==0 || (!click && self.clicked[(j-1)+(k+1)*self.map_width]==2))
-        {
-            self.clicked[(j-1)+(k+1)*self.map_width]=1;
-            if self.located[(j-1)+(k+1)*self.map_width]==0
-            {
-                self.expand(j-1, k+1, false);
-            }
-            else if self.located[(j-1)+(k+1)*self.map_width]==9
-            {
-                self.gameover();
-            }
-            else
-            {
-                self.ncells-=1;
-            }
-        }
-        if k>1 && (self.clicked[j+(k-1)*self.map_width]==0 || (!click && self.clicked[j+(k-1)*self.map_width]==2))
-        {
-            self.clicked[j+(k-1)*self.map_width]=1;
-            if self.located[j+(k-1)*self.map_width]==0
-            {
-                self.expand(j, k-1, false);
-            }
-            else if self.located[(j)+(k-1)*self.map_width]==9
-            {
-                self.gameover();
-            }
-            else
-            {
-                self.ncells-=1;
-            }
-        }
-        if k<self.map_height-2 && (self.clicked[j+(k+1)*self.map_width]==0 || (!click && self.clicked[j+(k+1)*self.map_width]==2))
-        {
-            self.clicked[j+(k+1)*self.map_width]=1;
-            if self.located[j+(k+1)*self.map_width]==0
-            {
-                self.expand(j, k+1, false);
-            }
-            else if self.located[(j)+(k+1)*self.map_width]==9
-            {
-                self.gameover();
-            }
-            else
-            {
-                self.ncells-=1;
-            }
-        }
-        if j<self.map_width-2 && k>1 && (self.clicked[(j+1)+(k-1)*self.map_width]==0 || (!click && self.clicked[(j+1)+(k-1)*self.map_width]==2))
-        {
-            self.clicked[(j+1)+(k-1)*self.map_width]=1;
-            if self.located[(j+1)+(k-1)*self.map_width]==0
-            {
-                self.expand(j+1, k-1, false);
-            }
-            else if self.located[(j+1)+(k-1)*self.map_width]==9
-            {
-                self.gameover();
-            }
-            else
-            {
-                self.ncells-=1;
-            }
-        }
-        if j<self.map_width-2 && (self.clicked[(j+1)+k*self.map_width]==0 || (!click && self.clicked[(j+1)+k*self.map_width]==2))
-        {
-            self.clicked[(j+1)+k*self.map_width]=1;
-            if self.located[(j+1)+k*self.map_width]==0
-            {
-                self.expand(j+1, k, false);
-            }
-            else if self.located[(j+1)+(k)*self.map_width]==9
-            {
-                self.gameover();
-            }
-            else
-            {
-                self.ncells-=1;
-            }
-        }
-        if j<self.map_width-2 && k<self.map_height-2 && (self.clicked[(j+1)+(k+1)*self.map_width]==0 || (!click && self.clicked[(j+1)+(k+1)*self.map_width]==2))
-        {
-            self.clicked[(j+1)+(k+1)*self.map_width]=1;
-            if self.located[(j+1)+(k+1)*self.map_width]==0
-            {
-                self.expand(j+1, k+1, false);
-            }
-            else if self.located[(j+1)+(k+1)*self.map_width]==9
-            {
-                self.gameover();
-            }else
-            {
-                self.ncells-=1;
+                self.clicked[address]=1;
+                if self.located[address]==0 {self.expand(nj as usize, nk as usize, false);}
+                else if self.located[address]==9 {self.gameover();}
+                else {self.ncells = self.ncells.saturating_sub(1);}
             }
         }
     }
