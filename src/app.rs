@@ -1,14 +1,35 @@
 pub enum GameState {
     Menu,
+    MapSize,
+    Bombs,
     Playing,
 }
 
-pub enum Selected
+pub enum SelectedMenu
+{
+    Play,
+    Guide,
+    GuessFree,
+    OptionsMap,
+    OptionsBomb,
+    Quit,
+}
+
+pub enum SelectedMapSize
 {
     Width,
     Height,
     Profile1,
     Profile2,
+}
+
+pub enum SelectedBombs
+{
+    Easy,
+    Medium,
+    Hard,
+    Number,
+    Percentual,
 }
 
 const NEIGHBORS: [(i32, i32); 8] =
@@ -27,12 +48,17 @@ pub struct App {
     pub should_quit: bool,
     pub map_width: usize,
     pub map_height: usize,
+    pub bombs_percentual: usize,
     pub bombs: usize,
     pub located: Vec<usize>, //Numbers (and bombs (9))
     pub clicked: Vec<usize>, //Cells to show
     pub defeat: bool,
     pub ncells: u16, //this variable is used to check if the defeat is actually a win
-    pub selection: Selected, //this enum is used in the menu part
+    pub selection_menu: SelectedMenu,
+    pub selection_map: SelectedMapSize,
+    pub selection_bombs: SelectedBombs,
+    pub guessfree: bool,
+    pub guide: bool,
 }
 
 impl App {
@@ -48,12 +74,17 @@ impl App {
             should_quit: false,
             map_width,
             map_height,
-            bombs: 0,
+            bombs_percentual: 16,
+            bombs: map_height*map_width*16/100,
             located: vec![0; map_height*map_width],
             clicked: vec![0; map_height*map_width],
             defeat: false,
             ncells: 0,
-            selection: Selected::Profile2,
+            selection_menu: SelectedMenu::Play,
+            selection_map: SelectedMapSize::Profile2,
+            selection_bombs: SelectedBombs::Medium,
+            guessfree: false,
+            guide: false,
         }
     }
     //Reset after a game (reset is called in main in GameState::Play after you get defeat
@@ -86,7 +117,6 @@ impl App {
     }
     
     pub fn generate(&mut self) {
-        self.located = vec![0; self.map_height*self.map_width];
         let mut count = 0;
         while count < self.bombs {
             let x = rand::random_range(1..=self.map_width.saturating_sub(2));
@@ -133,7 +163,7 @@ impl App {
 
     pub fn click(&mut self)
     { 
-        if self.located[self.cursor_x+self.cursor_y*self.map_width]==9
+        if self.clicked[self.cursor_x+self.cursor_y*self.map_width]!=2 && self.located[self.cursor_x+self.cursor_y*self.map_width]==9
         {
             self.gameover();
         }
@@ -181,7 +211,6 @@ impl App {
             self.bombs+=1;
         }
     }
-    //it just works
     //the function check if a cell next to the called one is already clicked.
     //If not then it click it and if it's an empty cell then it calls another expand,
     //if there's a bomb is gameover

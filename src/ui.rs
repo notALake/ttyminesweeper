@@ -1,10 +1,5 @@
-use ratatui::{
-    layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Style, Modifier},
-    widgets::{Block, Borders, Paragraph},
-    Frame,
-};
-use crate::app::{App, GameState, Selected};
+use ratatui::{layout::{Constraint, Direction, Layout, Rect}, style::{Color, Style, Modifier}, widgets::{Block, Borders, Paragraph}, Frame,};
+use crate::app::{App, GameState, SelectedMenu, SelectedMapSize, SelectedBombs};
 
 pub fn render(frame: &mut Frame, app: &App) {
     let chunks = Layout::default()
@@ -14,39 +9,129 @@ pub fn render(frame: &mut Frame, app: &App) {
 
     let borders = Block::default().borders(Borders::ALL);
     
+    if let GameState::Menu = app.state
+    {
+        if !app.guide
+        {
+            frame.render_widget(&borders, center_area(frame.area(), frame.area().width-10, frame.area().height-6));
+            frame.render_widget(Paragraph::new(format!("Play!")), ratatui::layout::Rect{x: frame.area().width/2-3, y: frame.area().height/2-6, width: 5, height:1});
+            frame.render_widget(Paragraph::new(format!("Guide")), ratatui::layout::Rect{x: frame.area().width/2-3, y: frame.area().height/2-4, width: 5, height: 1});
+            frame.render_widget(Paragraph::new(format!("Map")), ratatui::layout::Rect{x: frame.area().width/2-2, y: frame.area().height/2, width: 3, height:1});
+            frame.render_widget(Paragraph::new(format!("Bombs")), ratatui::layout::Rect{x: frame.area().width/2-3, y: frame.area().height/2+2, width: 5, height:1});
+            frame.render_widget(Paragraph::new(format!("Quit?")), ratatui::layout::Rect{x: frame.area().width/2-3, y: frame.area().height/2+4, width: 5, height:1});
+
+            if app.guessfree
+            {
+                frame.render_widget(Paragraph::new(format!("GuessFree")).style(Style::default().fg(Color::Rgb(255,0,0))), ratatui::layout::Rect{x: frame.area().width/2-5, y: frame.area().height/2-2, width: 9, height: 1});
+            }
+            else
+            {
+                frame.render_widget(Paragraph::new(format!("GuessFree")).style(Style::default().fg(Color::Rgb(0,255,0))), ratatui::layout::Rect{x: frame.area().width/2-5, y: frame.area().height/2-2, width: 9, height: 1});
+            }
+            if let SelectedMenu::Play = app.selection_menu
+            {
+                frame.render_widget(Paragraph::new(format!("Play!")).style(Style::default().add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width/2-3, y: frame.area().height/2-6, width: 5, height: 1});
+            }
+            else if let SelectedMenu::Guide = app.selection_menu
+            {
+                frame.render_widget(Paragraph::new(format!("Guide")).style(Style::default().add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width/2-3, y: frame.area().height/2-4, width: 5, height: 1});
+            }
+            else if let SelectedMenu::GuessFree = app.selection_menu
+            {
+                if !app.guessfree
+                {
+                    frame.render_widget(Paragraph::new(format!("GuessFree")).style(Style::default().fg(Color::Rgb(0,255,0)).add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width/2-5, y: frame.area().height/2-2, width: 9, height:1});
+                }
+                else
+                {
+                    frame.render_widget(Paragraph::new(format!("GuessFree")).style(Style::default().fg(Color::Rgb(255,0,0)).add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width/2-5, y: frame.area().height/2-2, width: 9, height:1});
+                }
+            }
+            else if let SelectedMenu::OptionsMap = app.selection_menu
+            {
+                frame.render_widget(Paragraph::new(format!("Map")).style(Style::default().add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width/2-2, y: frame.area().height/2, width: 3, height:1});
+            }
+            else if let SelectedMenu::OptionsBomb = app.selection_menu
+            {
+                frame.render_widget(Paragraph::new(format!("Bombs")).style(Style::default().add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width/2-3, y: frame.area().height/2+2, width: 5, height:1});
+            }
+            else if let SelectedMenu::Quit = app.selection_menu
+            {
+                frame.render_widget(Paragraph::new(format!("Quit?»")).style(Style::default().add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width/2-3, y: frame.area().height/2+4, width: 5, height:1});
+            }
+        }
+        else
+        {
+            frame.render_widget(&borders, center_area(frame.area(), frame.area().width.saturating_sub(144)+60, frame.area().height.saturating_sub(40)+8));
+            frame.render_widget(Paragraph::new(format!("Press k, z or f to flag\nPress Space, Enter, x or l to open a cell\nPress q to quit")), ratatui::layout::Rect{x: (frame.area().width/2).saturating_sub(48)+22, y: (frame.area().height/2).saturating_sub(8)+6, width: 42, height: 4});
+        }
+    }
+
     //Matrix Dimension Gui Selector -- the app.map width and height are being set in main.rs, with the KeyCode press
-    if let GameState::Menu = app.state { 
-        frame.render_widget(&borders, center_area(chunks[1], frame.area().width-4, frame.area().height-4));
+    else if let GameState::MapSize = app.state
+    { 
+        frame.render_widget(&borders, center_area(frame.area(), frame.area().width-10, frame.area().height-6));
         frame.render_widget(Paragraph::new(format!("9x9")), ratatui::layout::Rect{x: frame.area().width/4-1, y: frame.area().height/2-3, width: 3, height: 1});
         frame.render_widget(Paragraph::new(format!("30x16")), ratatui::layout::Rect{x: frame.area().width/2-2, y: frame.area().height/2-3, width: 5, height: 1});
         frame.render_widget(Paragraph::new(format!("Custom")), ratatui::layout::Rect{x: frame.area().width*3/4-3, y: frame.area().height/2-3, width: 6, height: 1});
         frame.render_widget(Paragraph::new(format!("Width: {}", app.map_width)), ratatui::layout::Rect{x: frame.area().width/3-5, y: frame.area().height/2+2, width: 10, height: 1});
         frame.render_widget(Paragraph::new(format!("Height: {}", app.map_height)), ratatui::layout::Rect{x: frame.area().width*2/3-5, y: frame.area().height/2+2, width: 11, height: 1});
-        frame.render_widget(Paragraph::new(format!("Press k, z or f to flag")), ratatui::layout::Rect{x: frame.area().width/2-10, y: frame.area().height/2+6, width: 23, height: 1});
-        frame.render_widget(Paragraph::new(format!("Press Space, Enter, x or l to open a cell")), ratatui::layout::Rect{x: frame.area().width/2-20, y: frame.area().height/2+7, width: 41, height: 1});
-        frame.render_widget(Paragraph::new(format!("Press q to quit")), ratatui::layout::Rect{x: frame.area().width/2-6, y: frame.area().height/2+8, width: 15, height: 1});
 
-        if let Selected::Profile1 = app.selection
+        if let SelectedMapSize::Profile1 = app.selection_map
         {
             frame.render_widget(Paragraph::new(format!("9x9")).style(Style::default().add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width/4-1, y: frame.area().height/2-3, width: 3, height: 1});
         }
-        else if let Selected::Profile2 = app.selection
+        else if let SelectedMapSize::Profile2 = app.selection_map
         {
             frame.render_widget(Paragraph::new(format!("30x16")).style(Style::default().add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width/2-2, y: frame.area().height/2-3, width: 5, height: 1});
         }
-        else if let Selected::Width = app.selection
+        else if let SelectedMapSize::Width = app.selection_map
         {
             frame.render_widget(Paragraph::new(format!("Custom")).style(Style::default().add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width*3/4-3, y: frame.area().height/2-3, width: 6, height: 1});
             frame.render_widget(Paragraph::new(format!("Width: {}", app.map_width)).style(Style::default().add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width/3-5, y: frame.area().height/2+2, width: 10, height: 1});
         }
-        else if let Selected::Height = app.selection
+        else if let SelectedMapSize::Height = app.selection_map
         {
             frame.render_widget(Paragraph::new(format!("Custom")).style(Style::default().add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width*3/4-3, y: frame.area().height/2-3, width: 6, height: 1});
             frame.render_widget(Paragraph::new(format!("Height: {}", app.map_height)).style(Style::default().add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width*2/3-5, y: frame.area().height/2+2, width: 11, height: 1});
         }
     }
 
-    if let GameState::Playing = app.state { 
+    else if let GameState::Bombs = app.state
+    {
+        frame.render_widget(&borders, center_area(frame.area(), frame.area().width-10, frame.area().height-6));
+        frame.render_widget(Paragraph::new(format!("Easy")), ratatui::layout::Rect{x: frame.area().width/5-2, y: frame.area().height/2-3, width: 4, height: 1});
+        frame.render_widget(Paragraph::new(format!("Medium")), ratatui::layout::Rect{x: frame.area().width/5*2-3, y: frame.area().height/2-3, width: 6, height: 1});
+        frame.render_widget(Paragraph::new(format!("Hard")), ratatui::layout::Rect{x: frame.area().width/5*3-2, y: frame.area().height/2-3, width: 4, height: 1});
+        frame.render_widget(Paragraph::new(format!("Custom")), ratatui::layout::Rect{x: frame.area().width/5*4-3, y: frame.area().height/2-3, width: 6, height: 1});
+        frame.render_widget(Paragraph::new(format!("Number: {}", app.bombs)), ratatui::layout::Rect{x: frame.area().width/3-5, y: frame.area().height/2+2, width: 11, height: 1});
+        frame.render_widget(Paragraph::new(format!("Percentual: {}", app.bombs_percentual)), ratatui::layout::Rect{x: frame.area().width*2/3-7, y: frame.area().height/2+2, width: 15, height: 1});
+        if let SelectedBombs::Easy = app.selection_bombs
+        {
+            frame.render_widget(Paragraph::new(format!("Easy")).style(Style::default().add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width/5-2, y: frame.area().height/2-3, width: 4, height: 1});
+        }
+        else if let SelectedBombs::Medium = app.selection_bombs
+        {
+            frame.render_widget(Paragraph::new(format!("Medium")).style(Style::default().add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width/5*2-3, y: frame.area().height/2-3, width: 6, height: 1});
+        }
+        else if let SelectedBombs::Hard = app.selection_bombs
+        {
+            frame.render_widget(Paragraph::new(format!("Hard")).style(Style::default().add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width/5*3-2, y: frame.area().height/2-3, width: 4, height: 1});
+        }
+        else if let SelectedBombs::Number = app.selection_bombs
+        {
+            frame.render_widget(Paragraph::new(format!("Custom")).style(Style::default().add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width/5*4-3, y: frame.area().height/2-3, width: 6, height: 1});
+            frame.render_widget(Paragraph::new(format!("Number: {}", app.bombs)).style(Style::default().add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width/3-5, y: frame.area().height/2+2, width: 11, height: 1});
+        }
+        else if let SelectedBombs::Percentual = app.selection_bombs
+        {
+            frame.render_widget(Paragraph::new(format!("Custom")).style(Style::default().add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width/5*4-3, y: frame.area().height/2-3, width: 6, height: 1});
+            frame.render_widget(Paragraph::new(format!("Percentual: {}", app.bombs_percentual)).style(Style::default().add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width*2/3-7, y: frame.area().height/2+2, width: 11, height: 1});
+        }
+    }
+
+    else if let GameState::Playing = app.state
+    { 
         frame.render_widget(&borders, center_area(chunks[0], frame.area().width, frame.area().height));
         frame.render_widget(Paragraph::new(format!("Timer: {}", app.timer)).style(Style::default().fg(Color::Rgb(0,255,0))), ratatui::layout::Rect{x: 6, y: 1, width: 13, height: 1});
         //VICTORY
@@ -91,7 +176,7 @@ pub fn render(frame: &mut Frame, app: &App) {
                         _ => (' ', Style::default().bg(Color::Rgb(64,64,64))),
                     };
                 }
-                else if app.clicked[j+k*app.map_width]==2
+                else if app.clicked[k*app.map_width+j]==2
                 {
                     num = 'F';
                     style = Style::default().fg(Color::Rgb(255, 0, 0)).bg(Color::Rgb(1,1,1));
@@ -102,7 +187,8 @@ pub fn render(frame: &mut Frame, app: &App) {
         }
     }
 
-    fn center_area(area: Rect, width: u16, height: u16) -> Rect {
+    fn center_area(area: Rect, width: u16, height: u16) -> Rect
+    {
         let vertical = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
