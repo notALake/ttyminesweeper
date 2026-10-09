@@ -1,6 +1,15 @@
 use ratatui::{layout::{Constraint, Direction, Layout, Rect}, style::{Color, Style, Modifier}, widgets::{Block, Borders, Paragraph}, Frame,};
 use crate::app::{App, GameState, SelectedMenu, SelectedMapSize, SelectedBombs};
 
+const TITLE: &str = r#"
+        __  __   _   __     _   ______   ______  __              __  ______   ______   ______    ______   _______    
+       /  \/  | | | |   \  | | |  ____| /  ____| \ \            / / |  ____| |  ____| |   _  \  |  ____| |   _   \   
+      / /\ /| | | | | |\ \ | | | |____  | |____   \ \    /\    / /  | |____  | |____  |  |_|  | | |____  |  |_|   |  
+     / /    | | | | | | \ \| | |  ____| \____  \   \ \  /  \  / /   |  ____| |  ____| |  ____/  |  ____| |  _   _/   
+    / /     | | | | | |  \   | | |____   ____| |    \ \/ /\ \/ /    | |____  | |____  | |       | |____  | |  \ \    
+   /_/      |_| |_| |_|   \__| |______| |______/     \__/  \__/     |______| |______| |_|       |______| |_|   \_\   
+"#;
+
 pub fn render(frame: &mut Frame, app: &App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -14,50 +23,52 @@ pub fn render(frame: &mut Frame, app: &App) {
         if !app.guide
         {
             frame.render_widget(&borders, center_area(frame.area(), frame.area().width-10, frame.area().height-6));
-            frame.render_widget(Paragraph::new(format!("Play!")), ratatui::layout::Rect{x: frame.area().width/2-3, y: frame.area().height/2-6, width: 5, height:1});
-            frame.render_widget(Paragraph::new(format!("Guide")), ratatui::layout::Rect{x: frame.area().width/2-3, y: frame.area().height/2-4, width: 5, height: 1});
-            frame.render_widget(Paragraph::new(format!("Map")), ratatui::layout::Rect{x: frame.area().width/2-2, y: frame.area().height/2, width: 3, height:1});
-            frame.render_widget(Paragraph::new(format!("Bombs")), ratatui::layout::Rect{x: frame.area().width/2-3, y: frame.area().height/2+2, width: 5, height:1});
-            frame.render_widget(Paragraph::new(format!("Quit?")), ratatui::layout::Rect{x: frame.area().width/2-3, y: frame.area().height/2+4, width: 5, height:1});
+            frame.render_widget(Paragraph::new(TITLE.trim_matches('\n')), ratatui::layout::Rect{x: (frame.area().width/2).saturating_sub(60)+1, y: frame.area().height/2-12, width: 118, height: 6});
+
+            frame.render_widget(Paragraph::new(format!("Play!")), ratatui::layout::Rect{x: frame.area().width/2-3, y: frame.area().height/2, width: 5, height: 1});
+            frame.render_widget(Paragraph::new(format!("Guide")), ratatui::layout::Rect{x: frame.area().width/2-3, y: frame.area().height/2+2, width: 5, height: 1});
+            frame.render_widget(Paragraph::new(format!("Map")), ratatui::layout::Rect{x: frame.area().width/2-2, y: frame.area().height/2+6, width: 3, height:1});
+            frame.render_widget(Paragraph::new(format!("Bombs")), ratatui::layout::Rect{x: frame.area().width/2-3, y: frame.area().height/2+8, width: 5, height: 1});
+            frame.render_widget(Paragraph::new(format!("Quit?")), ratatui::layout::Rect{x: frame.area().width/2-3, y: frame.area().height/2+10, width: 5, height: 1});
 
             if app.guessfree
             {
-                frame.render_widget(Paragraph::new(format!("GuessFree")).style(Style::default().fg(Color::Rgb(255,0,0))), ratatui::layout::Rect{x: frame.area().width/2-5, y: frame.area().height/2-2, width: 9, height: 1});
+                frame.render_widget(Paragraph::new(format!("GuessFree")).style(Style::default().fg(Color::Rgb(255,0,0))), ratatui::layout::Rect{x: frame.area().width/2-5, y: frame.area().height/2+4, width: 9, height: 1});
             }
             else
             {
-                frame.render_widget(Paragraph::new(format!("GuessFree")).style(Style::default().fg(Color::Rgb(0,255,0))), ratatui::layout::Rect{x: frame.area().width/2-5, y: frame.area().height/2-2, width: 9, height: 1});
+                frame.render_widget(Paragraph::new(format!("GuessFree")).style(Style::default().fg(Color::Rgb(0,255,0))), ratatui::layout::Rect{x: frame.area().width/2-5, y: frame.area().height/2+4, width: 9, height: 1});
             }
             if let SelectedMenu::Play = app.selection_menu
             {
-                frame.render_widget(Paragraph::new(format!("Play!")).style(Style::default().add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width/2-3, y: frame.area().height/2-6, width: 5, height: 1});
+                frame.render_widget(Paragraph::new(format!("Play!")).style(Style::default().add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width/2-3, y: frame.area().height/2, width: 5, height: 1});
             }
             else if let SelectedMenu::Guide = app.selection_menu
             {
-                frame.render_widget(Paragraph::new(format!("Guide")).style(Style::default().add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width/2-3, y: frame.area().height/2-4, width: 5, height: 1});
+                frame.render_widget(Paragraph::new(format!("Guide")).style(Style::default().add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width/2-3, y: frame.area().height/2+2, width: 5, height: 1});
             }
             else if let SelectedMenu::GuessFree = app.selection_menu
             {
                 if !app.guessfree
                 {
-                    frame.render_widget(Paragraph::new(format!("GuessFree")).style(Style::default().fg(Color::Rgb(0,255,0)).add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width/2-5, y: frame.area().height/2-2, width: 9, height:1});
+                    frame.render_widget(Paragraph::new(format!("GuessFree")).style(Style::default().fg(Color::Rgb(0,255,0)).add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width/2-5, y: frame.area().height/2+4, width: 9, height:1});
                 }
                 else
                 {
-                    frame.render_widget(Paragraph::new(format!("GuessFree")).style(Style::default().fg(Color::Rgb(255,0,0)).add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width/2-5, y: frame.area().height/2-2, width: 9, height:1});
+                    frame.render_widget(Paragraph::new(format!("GuessFree")).style(Style::default().fg(Color::Rgb(255,0,0)).add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width/2-5, y: frame.area().height/2+4, width: 9, height:1});
                 }
             }
             else if let SelectedMenu::OptionsMap = app.selection_menu
             {
-                frame.render_widget(Paragraph::new(format!("Map")).style(Style::default().add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width/2-2, y: frame.area().height/2, width: 3, height:1});
+                frame.render_widget(Paragraph::new(format!("Map")).style(Style::default().add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width/2-2, y: frame.area().height/2+6, width: 3, height:1});
             }
             else if let SelectedMenu::OptionsBomb = app.selection_menu
             {
-                frame.render_widget(Paragraph::new(format!("Bombs")).style(Style::default().add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width/2-3, y: frame.area().height/2+2, width: 5, height:1});
+                frame.render_widget(Paragraph::new(format!("Bombs")).style(Style::default().add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width/2-3, y: frame.area().height/2+8, width: 5, height:1});
             }
             else if let SelectedMenu::Quit = app.selection_menu
             {
-                frame.render_widget(Paragraph::new(format!("Quit?»")).style(Style::default().add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width/2-3, y: frame.area().height/2+4, width: 5, height:1});
+                frame.render_widget(Paragraph::new(format!("Quit?»")).style(Style::default().add_modifier(Modifier::REVERSED)), ratatui::layout::Rect{x: frame.area().width/2-3, y: frame.area().height/2+10, width: 5, height:1});
             }
         }
         else
